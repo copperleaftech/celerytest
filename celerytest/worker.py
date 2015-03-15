@@ -17,6 +17,8 @@ class CeleryWorkerThread(threading.Thread):
         self.workers = []
         self.consumers = []
         self.monitor = CeleryMonitorThread(app)
+        signals.after_task_publish.connect(self.monitor.task_begin)
+        signals.task_postrun.connect(self.monitor.task_finished)
 
         self.ready = threading.Event()
         self.active = self.monitor.active
@@ -77,28 +79,28 @@ class CeleryMonitorThread(threading.Thread):
         self.stop_requested = False
 
         self.pending = 0
+        self.pending_lock = threading.Lock()
         self.idle = threading.Event()
         self.idle.set()
         self.active = threading.Event()
 
+
+    def task_begin(self, *args, **kwargs):
+        with self.pending_lock:
+            self.pending += 1
+            self.idle.clear()
+            self.active.set()
+
+    def task_finished(self, *args, **kwargs):
+        with self.pending_lock:
+            self.pending -= 1
+            if self.pending <= 0:
+                self.active.clear()
+                self.idle.set()
+
     def on_event(self, event):
         # maintain state
         self.state.event(event)
-
-        # only need to update state when something relevant to pending tasks is happening
-        check_states = ['task-received','task-started','task-succeeded','task-failed','task-revoked']
-        if not event['type'] in check_states:
-            return
-
-        active = len(self.immediate_pending_tasks) > 0
-        
-        # switch signals if needed
-        if active and self.idle.is_set():
-            self.idle.clear()
-            self.active.set()
-        elif not active and self.active.is_set():
-            self.idle.set()
-            self.active.clear()
 
     @property
     def pending_tasks(self):
