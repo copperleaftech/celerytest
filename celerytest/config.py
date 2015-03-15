@@ -9,7 +9,7 @@ class CELERY_TEST_CONFIG_MEMORY(object):
     BROKER_URL = 'memory://'
     BROKER_TRANSPORT_OPTIONS = {'polling_interval': .01}
     CELERY_RESULT_BACKEND = "cache"
-    CELERY_CACHE_BACKEND = 'memcached://127.0.0.1:11211/'
+    CELERY_CACHE_BACKEND = 'memory://'
 
 class CELERY_TEST_CONFIG_AMQP(object):
     BROKER_URL = 'amqp://'
