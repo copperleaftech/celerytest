@@ -27,13 +27,23 @@ class CeleryTestCaseMixin(object):
 
     @classmethod
     def teardown_class(cls):
-        cls.worker.stop()
-        cls.worker.join()
+        try:
+            cls.worker.stop()
+            cls.worker.join()
+        except:
+            # Ignore errors that happens when the thread is killed before the worker is
+            # done, etc.
+            pass
 
     def setUp(self):
         if not getattr(self, 'shared_worker', False):
             self.worker = self.start_worker()
 
     def tearDown(self):
-        if not getattr(self, 'shared_worker', False):
-            self.worker.stop()
+        try:
+            if not getattr(self, 'shared_worker', False):
+                self.worker.stop()
+        except:
+            # Ignore errors that happens when the thread is killed before the worker is
+            # done, etc.
+            pass
