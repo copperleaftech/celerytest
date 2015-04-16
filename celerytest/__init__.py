@@ -15,5 +15,4 @@ def start_celery_worker(app, config=CELERY_TEST_CONFIG_MEMORY, concurrency=1):
     worker = CeleryWorkerThread(app)
     worker.daemon = True
     worker.start()
-    worker.ready.wait()
     return worker
