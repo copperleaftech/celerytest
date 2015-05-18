@@ -80,25 +80,18 @@ class WorkerThreadTestCase(CeleryTestCaseMixin, TestCase):
 
     def test_scheduled_task(self):
         result = multiply.apply_async((2,3), countdown=self.delay) # schedule this for the future
-        t1 = time.time()
-        self.worker.active.wait(self.overhead_time)
-        t2 = time.time()
-        self.worker.idle.wait()
-        t3 = time.time()
-
-        # shouldn't have executed yet
-        self.assertTrue(t2-t1 < self.overhead_time * 2)
-        self.assertTrue(t3-t2 < self.overhead_time)
         self.assertFalse(result.ready())
 
-        # should become active again soon
-        self.worker.active.wait(2)
-        t4 = time.time()
-        self.worker.idle.wait()
-        t5 = time.time()
-        self.assertTrue(result.ready())
+        t1 = time.time()
+        self.worker.active.wait()
+        t2 = time.time()
 
-        self.assertTrue(t5-t4 < self.overhead_time)
+        # Worker is active as soon as there are scheduled tasks.
+        self.assertLess(t2 - t1, self.overhead_time)
+
+        # should become active soon
+        self.worker.idle.wait()
+        self.assertTrue(result.ready())
 
     def test_wait_for_idle(self):
         result = multiply.delay(2, 3)
