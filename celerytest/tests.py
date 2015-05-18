@@ -99,3 +99,8 @@ class WorkerThreadTestCase(CeleryTestCaseMixin, TestCase):
         self.assertTrue(result.ready())
 
         self.assertTrue(t5-t4 < self.overhead_time)
+
+    def test_wait_for_idle(self):
+        result = multiply.delay(2, 3)
+        self.worker.idle.wait()
+        self.assertTrue(result.ready())
