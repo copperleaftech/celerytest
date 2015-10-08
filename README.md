@@ -55,6 +55,8 @@ worker = start_celery_worker(app)
 If the tasks you are testing require access to your database through Django's ORM models, you will need to use a TransactionTestCase instead of a regular TestCase:
 
 ```python
+from django.test import TransactionTestCase
+from celerytest.testcase import CeleryTestCaseMixin
 from celerytest import setup_celery_worker
 from djcelery.app import app as djcelery_app
 
