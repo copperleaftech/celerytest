@@ -21,15 +21,6 @@ result = some_celery_task.delay()
 worker.idle.wait() # optionally specify time-out
 ```
 
-### Django
-
-To use this with your django app through django-celery, get your app as such:
-
-```python
-from djcelery.app import app
-worker = start_celery_worker(app)
-```
-
 ### TestCase
 
 If you want to use this in a unittest TestCase, you can use CeleryTestCaseMixin. If you're writing unit tests that depend on a celery worker, though, you're doing it wrong. For unit tests, you'll want to mock your Celery methods and test them separately. You could use CeleryTestCaseMixin to write integration tests with Celery tasks, though.
@@ -45,6 +36,38 @@ setup_celery_worker(app) # need to setup worker outside
 class SomeTestCase(CeleryTestCaseMixin, TestCase):
     celery_app = app
     celery_concurrency = 4
+
+    def test_something(self):
+        result = multiply.delay(2,3)
+        self.worker.idle.wait()
+        self.assertEqual(result.get(), 6)
+```
+
+### Django
+
+To use this with your django app through django-celery, get your app as such:
+
+```python
+from djcelery.app import app
+worker = start_celery_worker(app)
+```
+
+If the tasks you are testing require access to your database through Django's ORM models, you will need to use a TransactionTestCase instead of a regular TestCase:
+
+```python
+from celerytest import setup_celery_worker
+from djcelery.app import app as djcelery_app
+
+setup_celery_worker(djcelery_app)
+
+class SomeTestCase(CeleryTestCaseMixin, TransactionTestCase):
+    celery_app = djcelery_app
+    celery_concurrency = 4
+
+    def setUp(self):
+        # Add setup code here...
+        # Run the CeleryTestCaseMixin's setUp function:
+        super(SomeTestCase, self).setUp()
 
     def test_something(self):
         result = multiply.delay(2,3)
